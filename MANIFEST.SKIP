@@ -20,3 +20,4 @@ t/cover_db*
 \.gitignore
 \.svnignore
 \.git
+_build

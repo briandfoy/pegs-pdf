@@ -23,20 +23,13 @@ PeGS::PDF - XXX: This is the description
 
 =cut
 
-
-
-BEGIN {
-
-package PeGS::PDF;
 use base qw(PDF::EasyPDF);
-use strict;
-use warnings;
 
 use List::Util qw(max);
 
 sub padding_factor { 0.7 }
 sub font_height    { 10 }
-sub font_width     { 10 }
+sub font_width     { 6 }
 sub font_size      { 10 }
 sub connector_height { 10 }
 sub black_bar_height { 5 }
@@ -46,17 +39,17 @@ sub box_height       { $_[0]->font_height + 2 * $_[0]->y_padding };
 
 sub y_padding { $_[0]->padding_factor * $_[0]->font_height }
 sub x_padding { $_[0]->padding_factor * $_[0]->font_width  }
-
+	
 sub make_reference
 	{
 	my( $pdf, $name, $value, $bottom_left_x, $bottom_left_y ) = @_;
 
-	my $scalar_width = 10 * length $name;
+	my $scalar_width = $pdf->font_width * length $name;
 	
 	$pdf->make_pointy_box( 
 		$bottom_left_x, 
 		$bottom_left_y, 
-		$scalar_width + 2* $pdf->x_padding,
+		$scalar_width + 2 * $pdf->x_padding,
 		$pdf->box_height, 
 		$name
 		);
@@ -74,27 +67,48 @@ sub make_reference
 		$pdf->box_height, 		
 		''
 		);
-		
-	my $angle  = 90;
-	my $length = 85;
 	
-	$pdf->make_reference_arrow(
+	my $arrow_start = XYPoint->new(
 		$bottom_left_x + ( $scalar_width + 2 * $pdf->x_padding ) / 2,
 		$bottom_left_y + $pdf->box_height / 2 - $pdf->connector_height - $pdf->box_height - 2*$pdf->stroke_width,
-		$angle,
-		$length,
+		);
+	
+	my $arrow_end = $pdf->make_reference_arrow(
+		$arrow_start,
+		$pdf->arrow_angle,
+		$pdf->arrow_length($scalar_width),
 		);
 		
 	$pdf->make_reference_icon(
-		$bottom_left_x + ( $scalar_width + 2 * $pdf->x_padding ) / 2,
-		$bottom_left_y + $pdf->box_height / 2 - $pdf->connector_height - $pdf->box_height,
+		#$bottom_left_x + ( $scalar_width + 2 * $pdf->x_padding ) / 2,
+		#$bottom_left_y + $pdf->box_height / 2 - $pdf->connector_height - $pdf->box_height,
+		$arrow_start
 		);
 	
-	my $x = $length + $bottom_left_x + ( $scalar_width + 2 * $pdf->x_padding ) / 2;
+	my $x = $pdf->arrow_length( $scalar_width ) + $bottom_left_x + ( $scalar_width + 2 * $pdf->x_padding ) / 2;
 	
-	if( ref $value eq ref \ '' )  { }
-	elsif( ref $value eq ref [] ) { }
-	elsif( ref $value eq ref {} ) { }
+	if(    ref $value eq ref \ '' )  
+		{ 
+		
+		}
+	elsif( ref $value eq ref [] )
+		{ 
+		$pdf->make_list(
+			$value,
+			$arrow_end->x, 
+			$arrow_end->y - $pdf->black_bar_height / 2,
+			);
+		
+		}
+	elsif( ref $value eq ref {} )    
+		{ 
+		$pdf->make_anonymous_hash(
+			$value,
+			$arrow_end->x, 
+			$arrow_end->y - $pdf->black_bar_height / 2,
+			);
+		
+		}
 	
 	}
 
@@ -182,11 +196,12 @@ $c .= sprintf(' %.2f %.2f %.2f %.2f %.2f %.2f c',
 sub make_magic_circle
 	{
 	my( $pdf, 
-		$xc, # x at the center of the circle
-		$yc, # y at the center of the circle
+		$center,
 		$r   # radius
 		) = @_;
 
+	my( $xc, $yc ) = $center->xy;
+	
 	my $magic = $r * 0.552;
 	my( $x0p, $y0p ) = ( $xc - $r, $yc );
 	$pdf->{stream} .= "$x0p $y0p m\n";
@@ -252,29 +267,56 @@ sub make_regular_polygon
 		}
 
 	}
+
+sub arrow_factor { 15 }
+
+sub arrow_length 
+	{ 
+	my( $pdf, $base ) = @_;
 	
+	if( defined $base ) 
+		{
+		$base + $pdf->arrow_factor;
+		}
+	else
+		{
+		85
+		}
+
+	}
+	
+	
+sub arrow_angle  { 90 }
+
 sub make_reference_arrow
 	{
-	my( $pdf, $start_x, $start_y, $angle, $length ) = @_;
-		
-	my $end_x = $start_x + $length * sin( $angle * 2 * 3.14 / 360 );
-	my $end_y = $start_y + $length * cos( $angle * 2 * 3.14 / 360 );
-
-	my $end_xp = $start_x + ($length-2) * sin( $angle * 2 * 3.14 / 360 );
-	my $end_yp = $start_y + ($length-2) * cos( $angle * 2 * 3.14 / 360 );
+	my( $pdf, $start, $angle, $length ) = @_;
+	
+	my $arrow_end = $start->clone;
+	$arrow_end->add_x( $length * sin( $angle * 2 * 3.14 / 360 ) );
+	$arrow_end->add_y( $length * cos( $angle * 2 * 3.14 / 360 ) );
+	
+	# the line needs to end before the pointy tip of the arrow, 
+	# so back off a little
+	my $line_end = $arrow_end->clone;
+	$line_end->add_x( -2 * sin( $angle * 2 * 3.14 / 360 ) );
+	$line_end->add_y( -2 * cos( $angle * 2 * 3.14 / 360 ) );
 	
 	my $L = 8;
 	my $l = 8;
 	
 	my $beta = 10;
 
-	my $arrow_tip1_x = $end_x - $L*sin( $angle * 2 * 3.14 / 360 ) - $l * cos( $angle * 2 * 3.14 / 360 ) / 2;
-	my $arrow_tip2_x = $end_x - $L*sin( $angle * 2 * 3.14 / 360 ) + $l * cos( $angle * 2 * 3.14 / 360 ) / 2;
+	my $arrow_retro_tip_high = $arrow_end->clone;
+	my $arrow_retro_tip_low  = $arrow_end->clone;
 	
-	my $arrow_tip1_y = $end_y - $L*cos( $angle * 2 * 3.14 / 360 ) + $l * sin( $angle * 2 * 3.14 / 360 ) / 2;
-	my $arrow_tip2_y = $end_y - $L*cos( $angle * 2 * 3.14 / 360 ) - $l * sin( $angle * 2 * 3.14 / 360 ) / 2;
+	$arrow_retro_tip_high->add_x( - $L*sin( $angle * 2 * 3.14 / 360 ) - $l * cos( $angle * 2 * 3.14 / 360 ) / 2 );
+	$arrow_retro_tip_high->add_y( - $L*cos( $angle * 2 * 3.14 / 360 ) + $l * sin( $angle * 2 * 3.14 / 360 ) / 2 );
+
+	$arrow_retro_tip_low->add_x( - $L*sin( $angle * 2 * 3.14 / 360 ) + $l * cos( $angle * 2 * 3.14 / 360 ) / 2 );
+	$arrow_retro_tip_low->add_y( - $L*cos( $angle * 2 * 3.14 / 360 ) - $l * sin( $angle * 2 * 3.14 / 360 ) / 2 );
 	
-	$pdf->lines( $start_x, $start_y, $end_xp, $end_yp );
+	$pdf->lines_xy( $start, $line_end );
 
 =pod
 
@@ -284,27 +326,36 @@ sub make_reference_arrow
 	$pdf->lines( $arrow_tip1_x + $pdf->stroke_width, $arrow_tip1_y, $arrow_tip2_x + $pdf->stroke_width, $arrow_tip2_y );
 
 =cut
-
+	
  	$pdf->filledPolygon(
- 		$end_x, $end_y,
- 		$arrow_tip1_x, $arrow_tip1_y,
- 		$arrow_tip2_x, $arrow_tip2_y,
+ 		$arrow_end->xy,
+ 		$arrow_retro_tip_high->xy,
+ 		$arrow_retro_tip_low->xy,
  		);
   
+  	return $arrow_end;
 	}
 
+sub lines_xy
+	{
+	my( $pdf, $start, $end ) = @_;
+	
+	$pdf->SUPER::lines(
+		$start->xy,
+		$end->xy,
+		);
+	}
+	
 sub make_reference_icon
 	{
-	my( $pdf, $x, $y ) = @_;
+	my( $pdf, $center ) = @_;
 
-	my $radius = $pdf->box_height / 6;
-	
 	$pdf->make_magic_circle(
-		$x - $radius / 4, 
-		$y - $radius / 4,
-		$radius, 
+		$center,
+		$pdf->box_height / 6, 
 		);
 	
+	$center;
 	}
 	
 =for comment
@@ -342,13 +393,13 @@ sub make_scalar
 	
 	my $length = max( map { length $_ } $name, $$value );
 
-	my $scalar_width  = 10*$length;
+	my $scalar_width  = $pdf->font_width * $length;
 	my $scalar_height = 10;
 	
 	$pdf->make_pointy_box( 
 		$bottom_left_x, 
 		$bottom_left_y, 
-		$scalar_width + 2* $pdf->x_padding,
+		$scalar_width + 2 * $pdf->x_padding,
 		$pdf->box_height, 
 		$name
 		);
@@ -358,7 +409,6 @@ sub make_scalar
 		( $bottom_left_x + $pdf->x_padding + $scalar_width / 2 ), $bottom_left_y - 10,
 		);
 		
-
 	$pdf->make_text_box(
 		$bottom_left_x, 
 		$bottom_left_y - 10 - $pdf->font_height - 2 * $pdf->y_padding,
@@ -374,7 +424,7 @@ sub make_array
 	
 	my $length = max( map { length $_ } $name, grep { ! ref $_ } @$array );
 
-	my $scalar_width  = 10*$length;
+	my $scalar_width  = $pdf->font_width * $length;
 		
 	$pdf->make_pointy_box( 
 		$bottom_left_x, 
@@ -388,35 +438,97 @@ sub make_array
 		( $bottom_left_x + $pdf->x_padding + $scalar_width / 2 ), $bottom_left_y,
 		( $bottom_left_x + $pdf->x_padding + $scalar_width / 2 ), $bottom_left_y - $pdf->connector_height,
 		);
-		
-	$pdf->make_collection_bar(
+	
+	$pdf->make_list(
+		$array,
 		$bottom_left_x,
 		$bottom_left_y - $pdf->connector_height - $pdf->black_bar_height,
-		$scalar_width + 2 * $pdf->x_padding + $pdf->pointy_width,
+		$scalar_width + 2 * $pdf->x_padding
+		);
+		
+	}
+
+sub make_list
+	{
+	my( $pdf, $array, $bottom_left_x, $bottom_left_y, $width ) = @_;
+
+	my $scalar_width = $width || $pdf->get_list_width( $array );
+	
+	$pdf->make_collection_bar(
+		$bottom_left_x,
+		$bottom_left_y,
+		$scalar_width + $pdf->pointy_width + $pdf->x_padding,
 		);
 		
 	my $count = 0;
 	foreach my $value ( @$array )
 		{
 		$count++;
+		
+		my $box_value = ref $value ? '' : $value;
 		$pdf->make_text_box(
 			$bottom_left_x, 
-			$bottom_left_y - $pdf->connector_height - $pdf->black_bar_height - $count*($pdf->font_height + 2 * $pdf->y_padding),
-			$scalar_width  + 2 * $pdf->x_padding,
+			$bottom_left_y - $count*($pdf->font_height + 2 * $pdf->y_padding),
+			$scalar_width  + $pdf->x_padding,
 			$pdf->box_height, 		
-			\ $value
+			\ $box_value
 			);
+			
+		if( ref $value )
+			{
+			my $center = XYPoint->new(
+				$bottom_left_x + ( $scalar_width + $pdf->x_padding )/2 + $pdf->x_padding,
+				$bottom_left_y + $pdf->box_height / 2 - $count*$pdf->box_height,
+				);
+				
+			$pdf->make_reference_icon( $center );
+			
+			my $arrow_end = $pdf->make_reference_arrow(
+				$center,
+				$pdf->arrow_angle,
+				$pdf->arrow_length( $scalar_width + $pdf->x_padding ),
+				);
+			
+			my $ref_start = $arrow_end->clone;
+			$ref_start->add_y( - $pdf->black_bar_height / 2 );
+			
+			if( ref $value eq ref [] )
+				{
+				$pdf->make_list( $value, $ref_start->xy );
+				}
+			elsif( ref $value eq ref {} )
+				{
+				$pdf->make_anonymous_hash( $value, $ref_start->xy );
+				}
+			}
 		}
+	
+	}
+	
+sub get_list_height
+	{
+	my( $pdf, $array ) = @_;
+	
+	
+	}
+	
+sub minimum_scalar_width { 3 * $_[0]->font_width }
+sub get_list_width
+	{
+	my( $pdf, $array ) = @_;
+	
+	my $length = max( map { length $_ }  grep { ! ref $_ } @$array );
+
+	my $scalar_width  = max( $pdf->minimum_scalar_width, $pdf->font_width * $length );
 	}
 	
 sub make_hash
 	{
 	my( $pdf, $name, $hash, $bottom_left_x, $bottom_left_y ) = @_;
 	
-	my $key_length   = max( map { length $_ } keys %$hash );
-	my $value_length = max( map { length $_ } grep { ! ref $_ } values %$hash );
-
-	my $scalar_width  = 10 * ( $key_length + $value_length ) + 4 * $pdf->x_padding + $pdf->pointy_width;
+	my( $key_length, $value_length ) = $pdf->get_hash_lengths( $hash );
+	
+	my $scalar_width  = $pdf->font_width * ( $key_length + $value_length ) + 4 * $pdf->x_padding + $pdf->pointy_width;
 		
 	$pdf->make_pointy_box( 
 		$bottom_left_x, 
@@ -430,10 +542,39 @@ sub make_hash
 		( $bottom_left_x + $pdf->x_padding + $scalar_width / 2 ), $bottom_left_y,
 		( $bottom_left_x + $pdf->x_padding + $scalar_width / 2 ), $bottom_left_y - $pdf->connector_height,
 		);
-		
-	$pdf->make_collection_bar(
+	
+	$pdf->make_anonymous_hash(
+		$hash,
 		$bottom_left_x,
 		$bottom_left_y - $pdf->connector_height - $pdf->black_bar_height,
+		);
+		
+	}
+
+sub get_hash_lengths
+	{
+	my( $pdf, $hash ) = @_;
+	
+	my $key_length   = max( map { length $_ } keys %$hash );
+	my $value_length = max( map { length $_ } grep { ! ref $_ } values %$hash );
+
+	( $key_length, $value_length );
+	}
+	
+sub make_anonymous_hash
+	{
+	my( $pdf, $hash, $bottom_left_x, $bottom_left_y ) = @_;
+
+	my( $key_length, $value_length ) = $pdf->get_hash_lengths( $hash );
+	
+	my $scalar_width  = 
+		$pdf->font_width * ( $key_length + $value_length ) + 
+		4 * $pdf->x_padding                                + 
+		$pdf->pointy_width;
+
+	$pdf->make_collection_bar(
+		$bottom_left_x,
+		$bottom_left_y,
 		$scalar_width + $pdf->pointy_width,
 		);
 		
@@ -443,13 +584,13 @@ sub make_hash
 		$count++;
 		
 		my $key_box_width = 
-			10 * $key_length + 1 * $pdf->x_padding + $pdf->pointy_width / 2;
+			$pdf->font_width * $key_length + 1 * $pdf->x_padding + $pdf->pointy_width / 2;
 			
 			; # share name box extra
 		
 		$pdf->make_pointy_box(
 			$bottom_left_x, 
-			$bottom_left_y - $pdf->connector_height - $pdf->black_bar_height - $count*($pdf->font_height + 2 * $pdf->y_padding),
+			$bottom_left_y - $count*($pdf->font_height + 2 * $pdf->y_padding),
 			$key_box_width,
 			$pdf->box_height, 		
 			$key
@@ -457,17 +598,19 @@ sub make_hash
 
 		$pdf->make_text_box(
 			$bottom_left_x + $key_box_width + $pdf->pointy_width + 2 * $pdf->stroke_width, 
-			$bottom_left_y - $pdf->connector_height - $pdf->black_bar_height - $count*($pdf->font_height + 2 * $pdf->y_padding),
-			10 * $value_length + $pdf->pointy_width / 2 - $pdf->stroke_width  + $pdf->x_padding / 2,
+			$bottom_left_y - $count*($pdf->font_height + 2 * $pdf->y_padding),
+			$pdf->font_width * $value_length + $pdf->x_padding - 2.125*$pdf->stroke_width,
 			$pdf->box_height, 		
 			\ $hash->{$key}
 			);
 		}
+	
 	}
+	
 	
 sub make_collection_bar
 	{
-	my( $pdf, $bottom_left_x, $bottom_left_y, $width, $text ) = @_;
+	my( $pdf, $bottom_left_x, $bottom_left_y, $width ) = @_;
 
 	my $height = $pdf->black_bar_height;
 	
@@ -524,8 +667,6 @@ sub make_pointy_box
 		);
 
 	}
-}
-
 
 =back
 
@@ -554,4 +695,21 @@ You may redistribute this under the same terms as Perl itself.
 
 =cut
 
+
+BEGIN {
+package XYPoint;
+
+sub new { bless [ @_[1,2] ], $_[0] }
+sub x { $_[0][0] }
+sub y { $_[0][1] }
+
+sub add_x { $_[0][0] += $_[1] }
+sub add_y { $_[0][1] += $_[1] }
+
+sub xy { ( $_[0]->x, $_[0]->y ) }
+
+sub clone { (ref $_[0])->new( $_[0]->xy ) }
+
+sub as_string { sprintf "(%d, %d)", $_[0]->x, $_[0]->y }
+}
 1;
