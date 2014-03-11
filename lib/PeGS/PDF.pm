@@ -9,6 +9,8 @@ use vars qw($VERSION);
 
 $VERSION = '0.10_02';
 
+=encoding utf8
+
 =head1 NAME
 
 PeGS::PDF - Draw simple Perl Graphical Structures
