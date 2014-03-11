@@ -59,8 +59,9 @@
 
 
 \.lwpcookies
-MANIFEST\.
+^MANIFEST\.
 t/\d
-\.releaserc
-\.travis.yml
-
+^\.releaserc$
+^\.travis.yml$
+\.tar$
+\.gz$
