@@ -11,7 +11,7 @@ $VERSION = '0.10_01';
 
 =head1 NAME
 
-PeGS::PDF - XXX: This is the description
+PeGS::PDF - Draw simple Perl Graphical Structures
 
 =head1 SYNOPSIS
 
