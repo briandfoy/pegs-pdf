@@ -3,7 +3,7 @@
 use PeGS::PDF;
 
 my $W    = 1.50 * 72;
-my $H    = 2.25  * 72;
+my $H    = 2.25 * 72;
 
 my $pdf = PeGS::PDF->new(
 	{
