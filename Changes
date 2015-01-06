@@ -1,5 +1,5 @@
 Revision history for Perl module Pegs::PDF
 
-0.10_02 - Tue Mar 11 14:23:25 2014
+0.10_02 - 2014-03-11
 	* Get rid of Module::Build. Other minor updates.
 
