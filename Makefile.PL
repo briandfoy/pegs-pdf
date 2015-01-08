@@ -3,11 +3,14 @@ use warnings;
 
 require 5.008;
 
+use File::Spec::Functions qw(catfile);
+
+my $module    = 'PeGS::PDF';
 my $github    = 'https://github.com/briandfoy/pegs-pdf';
-my $main_file = 'lib/PeGS/PDF.pm';
+my $main_file = catfile( 'lib', split /::/, "$module.pm" );
 
 my %WriteMakefile = (
-	'NAME'	        => 'PeGS::PDF',
+	'NAME'	        => $module,
 	'ABSTRACT_FROM' => $main_file,
 	'VERSION_FROM'  => $main_file,
 	'LICENSE'       => 'perl',
