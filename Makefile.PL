@@ -49,7 +49,7 @@ my %WriteMakefile = (
 			},
 		},
 
-	clean  => { FILES    => q|File-Find-Closures-*| },
+	clean => { FILES => "$dist-*" },
 	);
 
 sub arguments { \%WriteMakefile }
