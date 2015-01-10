@@ -5,6 +5,8 @@ use warnings;
 use File::Spec::Functions qw(catfile);
 
 my $module    = 'PeGS::PDF';
+( my $dist = $module ) =~ s/::/-/g;
+
 my $github    = 'https://github.com/briandfoy/pegs-pdf';
 my $main_file = catfile( 'lib', split /::/, "$module.pm" );
 
