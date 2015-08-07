@@ -9,6 +9,7 @@ examples/pegs
 examples/placeholder.pl
 examples/reference
 examples/scalar
+INSTALL.SKIP
 lib/PeGS/PDF.pm
 LICENSE
 Makefile.PL
