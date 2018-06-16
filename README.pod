@@ -2,6 +2,16 @@
 
 =encoding utf8
 
+=for HTML <a href="https://travis-ci.org/briandfoy/pegs-pdf"><img src="https://travis-ci.org/briandfoy/pegs-pdf.svg?branch=master" /></a>
+
+=for HTML <a href='https://ci.appveyor.com/project/briandfoy/pegs-pdf'><img src='https://ci.appveyor.com/api/projects/status/igfq8qfecki9mig1' /></a>
+
+=for HTML <a href='https://coveralls.io/github/briandfoy/pegs-pdf?branch=master'><img src='https://coveralls.io/repos/github/briandfoy/pegs-pdf/badge.svg?branch=master' alt='Coverage Status' /></a>
+
+=for HTML <a href="https://github.com/briandfoy/pegs-pdf/blob/master/LICENSE"><img src="https://img.shields.io/cpan/l/PeGS-PDF.svg" /></a>
+
+=for HTML <a href="http://www.metacpan.org/module/PeGS::PDF"><img src="https://img.shields.io/cpan/v/PeGS-PDF.svg" /></A>
+
 =head1 The PeGS::PDF module
 
 This is the I<README> for the L<PeGS::PDF> Perl module. You're probably 
