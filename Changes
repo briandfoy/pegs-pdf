@@ -1,5 +1,8 @@
 Revision history for Perl module Pegs::PDF
 
+0.101_01 2018-06-16T17:31:22Z
+	* Change to Artistic License 2.0.
+
 0.10_02 - 2014-03-11
 	* Get rid of Module::Build. Other minor updates.
 
