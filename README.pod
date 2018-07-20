@@ -10,7 +10,7 @@
 
 =for HTML <a href="https://github.com/briandfoy/pegs-pdf/blob/master/LICENSE"><img src="https://img.shields.io/cpan/l/PeGS-PDF.svg" /></a>
 
-=for HTML <a href="http://www.metacpan.org/module/PeGS::PDF"><img src="https://img.shields.io/cpan/v/PeGS-PDF.svg" /></A>
+=for HTML <a href="https://metacpan.org/pod/PeGS::PDF"><img src="https://img.shields.io/cpan/v/PeGS-PDF.svg" /></A>
 
 =head1 The PeGS::PDF module
 
@@ -23,7 +23,7 @@ for any Perl module.
 
 To read about L<PeGS::PDF>, look at the embedded documentation
 in the module itself. Inside the distribution, you can format it
-with L<perldoc|http://perldoc.perl.org/perldoc.html>:
+with L<perldoc|https://perldoc.perl.orgperldoc.html>:
 
 	% perldoc lib/PeGS/PDF.pm
 
@@ -33,7 +33,7 @@ name instead of the file location:
 	% perldoc PeGS::PDF
 
 You can read the documentation and inspect the meta data on
-L<MetaCPAN|http://www.metacpan.org/module/PeGS::PDF>.
+L<MetaCPAN|https://metacpan.org/pod/PeGS::PDF>.
 
 The standard module documentation has example uses in the SYNOPSIS
 section, but you can also look in the I<examples/> directory (if it's
