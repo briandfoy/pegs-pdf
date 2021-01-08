@@ -2,8 +2,6 @@
 
 =encoding utf8
 
-=for HTML <a href="https://travis-ci.org/briandfoy/pegs-pdf"><img src="https://travis-ci.org/briandfoy/pegs-pdf.svg?branch=master" /></a>
-
 =for HTML <a href='https://ci.appveyor.com/project/briandfoy/pegs-pdf'><img src='https://ci.appveyor.com/api/projects/status/igfq8qfecki9mig1' /></a>
 
 =for HTML <a href='https://coveralls.io/github/briandfoy/pegs-pdf?branch=master'><img src='https://coveralls.io/repos/github/briandfoy/pegs-pdf/badge.svg?branch=master' alt='Coverage Status' /></a>
