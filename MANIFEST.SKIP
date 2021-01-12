@@ -66,3 +66,6 @@ t/\d
 \.tar$
 \.gz$
 \.?appveyor\.yml
+\bMANIFEST\s\d
+\bChanges\s\d
+
