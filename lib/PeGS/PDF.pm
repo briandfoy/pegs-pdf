@@ -111,7 +111,6 @@ sub make_reference {
 			$arrow_end->x,
 			$arrow_end->y - $pdf->black_bar_height / 2,
 			);
-
 		}
 	elsif( ref $value eq ref {} ) {
 		$pdf->make_anonymous_hash(
@@ -119,7 +118,6 @@ sub make_reference {
 			$arrow_end->x,
 			$arrow_end->y - $pdf->black_bar_height / 2,
 			);
-
 		}
 
 	}
