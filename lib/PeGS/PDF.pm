@@ -7,7 +7,7 @@ no warnings;
 use subs qw();
 use vars qw($VERSION);
 
-$VERSION = '0.101_01';
+$VERSION = '0.102_01';
 
 =encoding utf8
 
