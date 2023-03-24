@@ -19,6 +19,20 @@ PeGS::PDF - Draw simple Perl Graphical Structures
 
 	use PeGS::PDF;
 
+	my $pdf = PeGS::PDF->new(
+		{
+		file => "array.pdf",
+		'x'  => 1.50 * 72,
+		'y'  => 2.25 * 72,
+		}
+		);
+	die "Could not create object!" unless ref $pdf;
+
+	$pdf->make_array( '@cats', [ qw(Buster Mimi Ginger Ella) ], 10, 120 );
+
+	$pdf->close;
+
+
 =head1 DESCRIPTION
 
 =over 4
