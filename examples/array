@@ -8,7 +8,7 @@ my $H    = 2.25 * 72;
 my $pdf = PeGS::PDF->new(
 	{
 	file => "/Users/brian/Desktop/array.pdf",
-	'x'    => $W,
+	'x'  => $W,
 	'y'  => $H,
 	}
 	);
