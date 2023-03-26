@@ -1,3 +1,6 @@
+use v5.36;
+use utf8;
+
 package PeGS::PDF;
 use strict;
 
@@ -74,7 +77,6 @@ sub make_reference {
 		( $bottom_left_x + $pdf->x_padding + $scalar_width / 2 ), $bottom_left_y - 10,
 		);
 
-
 	$pdf->make_text_box(
 		$bottom_left_x,
 		$bottom_left_y - 10 - $pdf->font_height - 2 * $pdf->y_padding,
@@ -88,17 +90,17 @@ sub make_reference {
 		$bottom_left_y + $pdf->box_height / 2 - $pdf->connector_height - $pdf->box_height - 2*$pdf->stroke_width,
 		);
 
-	my $arrow_end = $pdf->make_reference_arrow(
-		$arrow_start,
-		$pdf->arrow_angle,
-		$pdf->arrow_length($scalar_width),
+	my $target = $pdf->{refs}{"$value"} //= XYPoint->new(
+	    $arrow_start->clone->add_x( 50 )->x,
+		$arrow_start->y, # ++ ,,
 		);
 
-	$pdf->make_reference_icon(
-		#$bottom_left_x + ( $scalar_width + 2 * $pdf->x_padding ) / 2,
-		#$bottom_left_y + $pdf->box_height / 2 - $pdf->connector_height - $pdf->box_height,
-		$arrow_start
+	$pdf->make_reference_arrow(
+		$arrow_start,
+		$target,
 		);
+
+	$pdf->make_reference_icon($arrow_start);
 
 	my $x = $pdf->arrow_length( $scalar_width ) + $bottom_left_x + ( $scalar_width + 2 * $pdf->x_padding ) / 2;
 
@@ -108,15 +110,15 @@ sub make_reference {
 	elsif( ref $value eq ref [] ) {
 		$pdf->make_list(
 			$value,
-			$arrow_end->x,
-			$arrow_end->y - $pdf->black_bar_height / 2,
+			$target->x,
+			$target->y - $pdf->black_bar_height / 2, # -
 			);
 		}
 	elsif( ref $value eq ref {} ) {
 		$pdf->make_anonymous_hash(
 			$value,
-			$arrow_end->x,
-			$arrow_end->y - $pdf->black_bar_height / 2,
+			$target->x,
+			$target->y - $pdf->black_bar_height / 2, # -
 			);
 		}
 
@@ -284,53 +286,42 @@ sub arrow_length {
 	}
 
 
-sub arrow_angle  { 90 }
+sub arrow_angle  { 0 }
+
+sub arrowhead_length { 10 }
+sub arrowhead_width  {  5 }
 
 sub make_reference_arrow {
-	my( $pdf, $start, $angle, $length ) = @_;
+	my( $pdf, $start, $target ) = @_;
 
-	my $arrow_end = $start->clone;
-	$arrow_end->add_x( $length * sin( $angle * 2 * 3.14 / 360 ) );
-	$arrow_end->add_y( $length * cos( $angle * 2 * 3.14 / 360 ) );
+	my($angle, $length) = $start->angle_length_to($target);
 
-	# the line needs to end before the pointy tip of the arrow,
-	# so back off a little
-	my $line_end = $arrow_end->clone;
-	$line_end->add_x( -2 * sin( $angle * 2 * 3.14 / 360 ) );
-	$line_end->add_y( -2 * cos( $angle * 2 * 3.14 / 360 ) );
+	my $L = $pdf->arrowhead_length;
+	my $W = $pdf->arrowhead_width;
 
-	my $L = 8;
-	my $l = 8;
+	my $arrow_retro_tip_high = $target
+		->clone
+		->add(
+			- $L * cos($angle) - $W * sin($angle),
+			- $L * sin($angle) + $W * cos($angle)
+			);
 
-	my $beta = 10;
+	my $arrow_retro_tip_low = $target
+		->clone
+		->add(
+			- $L * cos($angle) + $W * sin($angle),
+			- $L * sin($angle) - $W * cos($angle)
+			);
 
-	my $arrow_retro_tip_high = $arrow_end->clone;
-	my $arrow_retro_tip_low  = $arrow_end->clone;
-
-	$arrow_retro_tip_high->add_x( - $L*sin( $angle * 2 * 3.14 / 360 ) - $l * cos( $angle * 2 * 3.14 / 360 ) / 2 );
-	$arrow_retro_tip_high->add_y( - $L*cos( $angle * 2 * 3.14 / 360 ) + $l * sin( $angle * 2 * 3.14 / 360 ) / 2 );
-
-	$arrow_retro_tip_low->add_x( - $L*sin( $angle * 2 * 3.14 / 360 ) + $l * cos( $angle * 2 * 3.14 / 360 ) / 2 );
-	$arrow_retro_tip_low->add_y( - $L*cos( $angle * 2 * 3.14 / 360 ) - $l * sin( $angle * 2 * 3.14 / 360 ) / 2 );
-
-	$pdf->lines_xy( $start, $line_end );
-
-=pod
-
-	$pdf->lines( $end_x, $end_y, $arrow_tip1_x, $arrow_tip1_y );
-	$pdf->lines( $end_x, $end_y, $arrow_tip2_x, $arrow_tip2_y );
-
-	$pdf->lines( $arrow_tip1_x + $pdf->stroke_width, $arrow_tip1_y, $arrow_tip2_x + $pdf->stroke_width, $arrow_tip2_y );
-
-=cut
+	$pdf->lines_xy( $start, $target );
 
  	$pdf->filledPolygon(
- 		$arrow_end->xy,
+ 		$target->xy,
  		$arrow_retro_tip_high->xy,
  		$arrow_retro_tip_low->xy,
  		);
 
-  	return $arrow_end;
+  	return $target;
 	}
 
 sub lines_xy {
@@ -443,6 +434,7 @@ sub make_array {
 
 sub make_list {
 	my( $pdf, $array, $bottom_left_x, $bottom_left_y, $width ) = @_;
+	return if exists $pdf->{refs}{ "$array" };
 
 	my $scalar_width = $width || $pdf->get_list_width( $array );
 
@@ -450,6 +442,11 @@ sub make_list {
 		$bottom_left_x,
 		$bottom_left_y,
 		$scalar_width + $pdf->pointy_width + $pdf->x_padding,
+		);
+
+	$pdf->{refs}{ "$array" } = XYPoint->new(
+		$bottom_left_x,
+		$bottom_left_y + $pdf->box_height / 2
 		);
 
 	my $count = 0;
@@ -471,12 +468,17 @@ sub make_list {
 				$bottom_left_y + $pdf->box_height / 2 - $count*$pdf->box_height,
 				);
 
+			my $target = $pdf->{refs}{ "$value" } //
+				XYPoint->new(
+					$center->x + $pdf->arrow_length( $scalar_width + $pdf->x_padding ),
+					$center->y, # ,,
+					);
+
 			$pdf->make_reference_icon( $center );
 
 			my $arrow_end = $pdf->make_reference_arrow(
 				$center,
-				$pdf->arrow_angle,
-				$pdf->arrow_length( $scalar_width + $pdf->x_padding ),
+				$target,
 				);
 
 			my $ref_start = $arrow_end->clone;
@@ -499,6 +501,7 @@ sub get_list_height {
 	}
 
 sub minimum_scalar_width { 3 * $_[0]->font_width }
+
 sub get_list_width {
 	my( $pdf, $array ) = @_;
 
@@ -588,7 +591,6 @@ sub make_anonymous_hash {
 
 	}
 
-
 sub make_collection_bar {
 	my( $pdf, $bottom_left_x, $bottom_left_y, $width ) = @_;
 
@@ -650,6 +652,7 @@ sub make_pointy_box {
 
 =head1 TO DO
 
+Everything.
 
 =head1 SEE ALSO
 
@@ -675,13 +678,51 @@ You may redistribute this under the terms of the Artistic License 2.0.
 
 BEGIN {
 	package XYPoint;
+	use POSIX qw(atan);
+
+	use constant π => 3.1415926;
 
 	sub new { bless [ @_[1,2] ], $_[0] }
 	sub x { $_[0][0] }
-	sub y { $_[0][1] }
+	sub y ###
+		{ $_[0][1] }
 
-	sub add_x { $_[0][0] += $_[1] }
-	sub add_y { $_[0][1] += $_[1] }
+	sub add ($self, $delta_x, $delta_y) {
+		$self->add_x( $delta_x );
+		$self->add_y( $delta_y );
+		$self;
+		}
+	sub add_x ($self, $delta_x) { $self->[0] += $delta_x; $self }
+	sub add_y ($self, $delta_y) { $self->[1] += $delta_y; $self }
+
+	sub angle_length_to {
+		my( $self, $target ) = @_;
+
+		my $h = $target->y - $self->y; # -
+		my $b = $target->x - $self->x;
+
+		if( $b == 0 ) {
+			my $sign = $h > 0 ? 1 : -1;
+			return ( $sign * 1/2 * π, abs($h) );
+			}
+
+		my $ratio = $h / $b;
+
+		say STDERR "H: $h B: $b";
+		my $angle = atan( $ratio );
+		say STDERR "angle before: $angle";
+
+		   if( $b < 0 and $h < 0 ) { $angle -= π }
+		elsif( $b < 0 and $h >= 0 ) { $angle += π }
+
+		say STDERR "angle after: $angle";
+
+		my $length = sqrt( $b**2 + $h**2 );
+		($angle, $length);
+		}
+
+	sub rotate ( $self, $angle ) {
+		}
 
 	sub xy { ( $_[0]->x, $_[0]->y ) }
 
