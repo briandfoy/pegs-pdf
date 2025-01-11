@@ -46,6 +46,10 @@ use base qw(PDF::EasyPDF);
 
 use List::Util qw(max);
 
+=item padding_factor
+
+=cut
+
 sub padding_factor   { 0.7 }
 sub font_height      { 10 }
 sub font_width       { 6 }
@@ -287,6 +291,12 @@ sub arrow_length {
 
 
 sub arrow_angle  { 0 }
+
+=item arrowhead_length
+
+=item arrowhead_width
+
+=cut
 
 sub arrowhead_length { 10 }
 sub arrowhead_width  {  5 }
